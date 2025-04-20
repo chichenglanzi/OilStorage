@@ -44,11 +44,7 @@
   </style>
 </head>
 <body>
-<!-- 用户信息展示区域 -->
-<!--<div class="user-info" sec:authorize="isAuthenticated()">-->
-<!--  用户：<span sec:authentication="name"></span>-->
-<!--  角色：<span sec:authentication="principal.authorities"></span>-->
-<!--</div>-->
+
 <div class="user-info">
   登录用户：<span th:text="${username}"></span>
   角色：<span th:text="${role}"></span>
@@ -73,26 +69,27 @@
   <span id="currentWhName" th:text="${warehouses[0].name}"></span>
 </h3>
 
-<!--<div id="sensorDataContainer">-->
-<!--  <table th:if="${not #lists.isEmpty(warehouses[0].sensorData)}" class="sensor-table">-->
-<!--    <thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead>-->
-<!--    <tbody>-->
-<!--    <tr th:each="data : ${warehouses[0].sensorData}">-->
-<!--      <td th:text="${#temporals.format(data.timestamp, 'yyyy-MM-dd HH:mm')}"></td>-->
-<!--      <td th:text="${data.temperature?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>-->
-<!--      <td th:text="${data.humidity?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>-->
-<!--      <td th:text="${data.stock?.setScale(2, T(java.math.RoundingMode).HALF_UP)}"></td>-->
-<!--      <td th:text="${data.alert ? '异常' : '正常'}"></td>-->
-<!--    </tr>-->
-<!--    </tbody>-->
-<!--  </table>-->
-<!--</div>-->
+<div id="sensorDataContainer">
+  <table th:if="${not #lists.isEmpty(warehouses[0].sensorData)}" class="sensor-table">
+    <thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead>
+    <tbody>
+    <tr th:each="data : ${warehouses[0].sensorData}">
+      <td th:text="${#temporals.format(data.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
+      <td th:text="${data.temperature?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>
+      <td th:text="${data.humidity?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>
+      <td th:text="${data.stock?.setScale(2, T(java.math.RoundingMode).HALF_UP)}"></td>
+      <td th:text="${data.isAlert ? '异常' : '正常'}"></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
 
 <script th:inline="javascript">
   $(function() {
     // 初始化第一个油库的详细信息
     const firstBtn = $(".warehouse-btn").first();
     updateWarehouseDetails(firstBtn);
+    loadSensorData(firstBtn.data('id'));
 
     // 按钮点击事件处理
     $(".warehouse-btn").click(function() {
@@ -122,6 +119,7 @@
     $.ajax({
       url: "/sensor-data/" + warehouseId,
       success: function(data) {
+        console.log('收到的传感器数据:', data); // 添加日志
         renderSensorData(data);
       },
       error: function(xhr) {
@@ -131,15 +129,20 @@
   }
 
   function renderSensorData(data) {
+    if (data.length === 0) {
+      $("#sensorDataContainer").html("<p>暂无传感器数据</p>");
+      return;
+    }
     let html = '<table class="sensor-table"><thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead><tbody>';
 
     data.forEach(d => {
+      console.log('当前处理的数据:', d); // 添加日志
       html += `<tr>
-                    <td>${new Date(d.timestamp).toLocaleString()}</td>
-                    <td>${d.temperature?.toFixed(1) ?? '--'}</td>
-                    <td>${d.humidity?.toFixed?.(1) ?? '--'}</td>
-                    <td>${d.stock ? d.stock.toFixed(2) : '0.00'}</td>
-                    <td>${d.alert ? '异常' : '正常'}</td>
+                    <td>${d.timestamp ?new Date(d.timestamp).toLocaleString() : 'N/A'}</td>
+                    <td>${(d.temperature || 0).toFixed(1)}</td>
+            <td>${(d.humidity || 0).toFixed(1)}</td>
+            <td>${(d.stock || 0).toFixed(2)}</td>
+                    <td>${d.isAlert ? '异常' : '正常'}</td>
                 </tr>`;
     });
 
