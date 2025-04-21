@@ -1,5 +1,7 @@
 package com.example.oilstorage.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
@@ -13,7 +15,11 @@ import java.util.List;
 @Entity
 @Table(name = "warehouses",
         indexes = @Index(name = "idx_manager", columnList = "manager_id"))
-
+// 添加注解，使用实体的id作为唯一标识
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class Warehouse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

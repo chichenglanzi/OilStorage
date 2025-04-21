@@ -1,5 +1,7 @@
 package com.example.oilstorage.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,7 +15,11 @@ import java.util.Objects;
                 @Index(name = "idx_user_warehouse", columnList = "user_id, warehouse_id"),
                 @Index(name = "idx_warehouse_user", columnList = "warehouse_id, user_id")
         })
-
+// 添加注解（若该实体被直接序列化）
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class UserWarehouseRelation {
     @EmbeddedId
     private UserWarehouseId id;
