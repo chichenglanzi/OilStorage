@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -137,5 +138,16 @@ public class InventoryService {
         transaction.setWarehouse(warehouse); // 关联油库实体
 
         transactionRepo.save(transaction);
+    }
+    /**
+     * 获取油库的前10条区块链交易记录
+     * @param warehouseId 油库ID
+     * @return 交易记录列表
+     */
+    public List<BlockchainTransaction> getLatestBlockchainTransactions(Integer warehouseId) {
+        // 校验油库是否存在（复用现有方法）
+        getValidWarehouse(warehouseId);
+        // 调用Repository查询
+        return transactionRepo.findTop10ByWarehouseIdOrderByTimestampDesc(warehouseId);
     }
 }

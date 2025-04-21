@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,6 +54,18 @@ public class InventoryController {
             return ResponseEntity.ok("出库操作成功");
         } catch (IllegalArgumentException | EntityNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    // 新增：获取油库的前10条区块链交易记录
+    @GetMapping("/warehouse/{warehouseId}/transactions")
+    public ResponseEntity<List<BlockchainTransaction>> getBlockchainTransactions(
+            @PathVariable Integer warehouseId
+    ) {
+        try {
+            List<BlockchainTransaction> transactions = inventoryService.getLatestBlockchainTransactions(warehouseId);
+            return ResponseEntity.ok(transactions);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

@@ -244,7 +244,7 @@
     // 区块链交易相关函数
     function loadBlockchainTransactions() {
       $.ajax({
-        url: "/api/blockchain-transactions",
+        url: "/inventory/warehouse/${warehouseId}/transactions",
         success: function(data) {
           renderBlockchainTransactions(data);
         },

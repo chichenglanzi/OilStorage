@@ -15,6 +15,6 @@ public interface BlockchainTransactionRepository extends JpaRepository<Blockchai
             Integer warehouseId,
             BlockchainTransaction.TransactionType txType
     );
-    List<BlockchainTransaction> findTop10ByOrderByTimestampDesc();
+    List<BlockchainTransaction> findTop10ByWarehouseIdOrderByTimestampDesc(Integer warehouseId);
 }
 
