@@ -42,22 +42,7 @@
 </head>
 <body>
 
-<div class="container">
-  <!-- 用户信息与操作面板 -->
-  <div class="header-section">
-    <div class="user-info">
-      登录用户：<span th:text="${username}"></span> |
-      角色：<span th:text="${role}"></span>
-    </div>
-    <div class="operation-panel">
-      <input type="number" id="stockAmount" step="0.01"
-             placeholder="输入数量（吨）" required
-             style="padding: 8px; width: 180px; margin-right: 15px;">
-      <button class="btn" id="inStockBtn">入库</button>
-      <button class="btn" id="outStockBtn">出库</button>
-      <span id="operationResult" class="success-message" style="display: none;"></span>
-    </div>
-  </div>
+
 
   <!-- 油库选择按钮 -->
   <div class="warehouse-btn-group">
@@ -86,7 +71,22 @@
       <div>当前库存：<span id="whStock">- 吨</span></div>
       <div>负责人：<span id="whManager">-</span></div>
     </div>
-
+    <div class="container">
+      <!-- 用户信息与操作面板 -->
+      <div class="header-section">
+        <div class="user-info">
+          登录用户：<span th:text="${username}"></span> |
+          角色：<span th:text="${role}"></span>
+        </div>
+        <div class="operation-panel">
+          <input type="number" id="stockAmount" step="0.01"
+                 placeholder="输入数量（吨）" required
+                 style="padding: 8px; width: 180px; margin-right: 15px;">
+          <button class="btn" id="inStockBtn">入库</button>
+          <button class="btn" id="outStockBtn">出库</button>
+          <span id="operationResult" class="success-message" style="display: none;"></span>
+        </div>
+      </div>
     <!-- 传感器数据区域 -->
     <h4>最新传感器数据</h4>
     <div id="sensorDataContainer">
