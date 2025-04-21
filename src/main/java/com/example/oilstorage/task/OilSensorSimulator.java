@@ -87,7 +87,7 @@ public class OilSensorSimulator {
                 warehouseId,
                 humidityHistory,
                 BigDecimal.ZERO,
-                new BigDecimal("100.00"),
+                new BigDecimal("84.99"),
                 HUMIDITY_VARIATION
         ));
 
