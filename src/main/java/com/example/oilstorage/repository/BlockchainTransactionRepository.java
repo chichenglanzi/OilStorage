@@ -5,6 +5,8 @@ import com.example.oilstorage.entity.BlockchainTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface BlockchainTransactionRepository extends JpaRepository<BlockchainTransaction, String> {
     // 可选：自定义查询方法（根据业务需求添加）
@@ -13,4 +15,6 @@ public interface BlockchainTransactionRepository extends JpaRepository<Blockchai
             Integer warehouseId,
             BlockchainTransaction.TransactionType txType
     );
+    List<BlockchainTransaction> findTop10ByOrderByTimestampDesc();
 }
+

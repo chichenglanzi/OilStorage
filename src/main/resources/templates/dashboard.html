@@ -42,58 +42,71 @@
 </head>
 <body>
 
-
-
-  <!-- 油库选择按钮 -->
-  <div class="warehouse-btn-group">
-    <h2>选择油库</h2>
-    <div id="warehouseButtons">
-      <button th:each="wh, iter : ${warehouses}"
-              class="warehouse-btn"
-              th:data-id="${wh.id}"
-              th:data-location="${wh.location}"
-              th:data-capacity="${wh.capacity}"
-              th:data-stock="${wh.stock}"
-              th:data-manager="${wh.manager?.username}"
-              th:text="${wh.name}"
-              th:classappend="${iter.index == 0} ? 'active'"
-              data-tooltip="点击查看详细信息">
-      </button>
-    </div>
-  </div>
-
-  <!-- 油库详细信息区域 -->
-  <div id="warehouseInfo">
-    <h3 id="currentWhName">加载中...</h3>
-    <div class="wh-basic-info">
-      <div>位置：<span id="whLocation">-</span></div>
-      <div>最大容量：<span id="whCapacity">- 吨</span></div>
-      <div>当前库存：<span id="whStock">- 吨</span></div>
-      <div>负责人：<span id="whManager">-</span></div>
-    </div>
-    <div class="container">
-      <!-- 用户信息与操作面板 -->
-      <div class="header-section">
-        <div class="user-info">
-          登录用户：<span th:text="${username}"></span> |
-          角色：<span th:text="${role}"></span>
-        </div>
-        <div class="operation-panel">
-          <input type="number" id="stockAmount" step="0.01"
-                 placeholder="输入数量（吨）" required
-                 style="padding: 8px; width: 180px; margin-right: 15px;">
-          <button class="btn" id="inStockBtn">入库</button>
-          <button class="btn" id="outStockBtn">出库</button>
-          <span id="operationResult" class="success-message" style="display: none;"></span>
-        </div>
-      </div>
-    <!-- 传感器数据区域 -->
-    <h4>最新传感器数据</h4>
-    <div id="sensorDataContainer">
-      <p class="text-muted">请选择油库查看数据...</p>
-    </div>
+<!-- 用户信息与操作面板 -->
+<div class="header-section">
+  <div class="user-info">
+    登录用户：<span th:text="${username}"></span> |
+    角色：<span th:text="${role}"></span>
   </div>
 </div>
+<!-- 油库选择按钮 -->
+<div class="warehouse-btn-group">
+  <h2>选择油库</h2>
+  <div id="warehouseButtons">
+    <button th:each="wh, iter : ${warehouses}"
+            class="warehouse-btn"
+            th:data-id="${wh.id}"
+            th:data-location="${wh.location}"
+            th:data-capacity="${wh.capacity}"
+            th:data-stock="${wh.stock}"
+            th:data-manager="${wh.manager?.username}"
+            th:text="${wh.name}"
+            th:classappend="${iter.index == 0} ? 'active'"
+            data-tooltip="点击查看详细信息">
+    </button>
+  </div>
+</div>
+
+<!-- 油库详细信息区域 -->
+<div id="warehouseInfo">
+  <h3 id="currentWhName">加载中...</h3>
+  <div class="wh-basic-info">
+    <div>位置：<span id="whLocation">-</span></div>
+    <div>最大容量：<span id="whCapacity">- 吨</span></div>
+    <div>当前库存：<span id="whStock">- 吨</span></div>
+    <div>负责人：<span id="whManager">-</span></div>
+  </div>
+  <div class="container">
+    <div class="operation-panel">
+      <input type="number" id="stockAmount" step="0.01"
+             placeholder="输入数量（吨）" required
+             style="padding: 8px; width: 180px; margin-right: 15px;">
+      <button class="btn" id="inStockBtn">入库</button>
+      <button class="btn" id="outStockBtn">出库</button>
+      <span id="operationResult" class="success-message" style="display: none;"></span>
+    </div>
+  </div>
+  <div id="blockchainTransactionsContainer">
+    <h3>区块链交易记录</h3>
+    <table class="sensor-table">
+      <thead>
+      <tr>
+        <th>时间</th>
+        <th>交易类型</th>
+        <th>仓库</th>
+        <th>回执</th>
+      </tr>
+      </thead>
+      <tbody id="blockchainTransactionsBody"></tbody>
+    </table>
+  </div>
+  <!-- 传感器数据区域 -->
+  <h4>最新传感器数据</h4>
+  <div id="sensorDataContainer">
+    <p class="text-muted">请选择油库查看数据...</p>
+  </div>
+</div>
+
 
 <script th:inline="javascript">
   $(function() {
@@ -118,6 +131,9 @@
 
       performStockOperation(warehouseId, operationType, amount);
     });
+
+    // 合并初始化调用，避免重复执行
+    loadBlockchainTransactions();
 
     function handleWarehouseSelection(btn) {
       // 激活按钮
@@ -223,6 +239,54 @@
               .show()
               .delay(3000)
               .fadeOut();
+    }
+
+    // 区块链交易相关函数
+    function loadBlockchainTransactions() {
+      $.ajax({
+        url: "/api/blockchain-transactions",
+        success: function(data) {
+          renderBlockchainTransactions(data);
+        },
+        error: function(xhr) {
+          console.error("区块链交易数据加载失败:", xhr.statusText);
+        }
+      });
+    }
+
+    function renderBlockchainTransactions(data) {
+      const body = $("#blockchainTransactionsBody");
+      body.empty(); // 清空旧数据
+
+      // 处理数据为空的情况
+      if (data.length === 0) {
+        body.append(`
+          <tr>
+            <td colspan="4" class="text-muted text-center">暂无区块链交易记录</td>
+          </tr>
+        `);
+        return;
+      }
+
+      data.forEach(transaction => {
+        const timestamp = transaction.timestamp ?
+                new Date(transaction.timestamp).toLocaleString() : "未知时间";
+        const txType = transaction.txType ?
+                transaction.txType.toUpperCase() : "未知类型";
+        const warehouseName = transaction.warehouse && transaction.warehouse.name ?
+                transaction.warehouse.name : "未知仓库";
+        const txHash = transaction.txhash || "N/A";
+
+        const row = `
+          <tr>
+            <td>${timestamp}</td>
+            <td>${txType}</td>
+            <td>${warehouseName}</td>
+            <td>${txHash}</td>
+          </tr>
+        `;
+        body.append(row);
+      });
     }
   });
 </script>
