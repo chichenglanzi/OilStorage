@@ -145,6 +145,7 @@
 
       // 加载传感器数据
       loadSensorData(btn.data('id'));
+
     }
 
     function updateBasicInfo(btn) {
@@ -243,8 +244,14 @@
 
     // 区块链交易相关函数
     function loadBlockchainTransactions() {
+      const warehouseId = $(".warehouse-btn.active").data('id'); // ✅ 动态获取当前选中油库ID
+      if (!warehouseId) {
+        console.error("No warehouse selected");
+        return;
+      }
       $.ajax({
-        url: "/inventory/warehouse/${warehouseId}/transactions",
+        url: `/inventory/warehouse/${warehouseId}/transactions`,
+        type: "GET",
         success: function(data) {
           renderBlockchainTransactions(data);
         },
@@ -269,23 +276,31 @@
       }
 
       data.forEach(transaction => {
-        const timestamp = transaction.timestamp ?
-                new Date(transaction.timestamp).toLocaleString() : "未知时间";
-        const txType = transaction.txType ?
-                transaction.txType.toUpperCase() : "未知类型";
-        const warehouseName = transaction.warehouse && transaction.warehouse.name ?
-                transaction.warehouse.name : "未知仓库";
-        const txHash = transaction.txhash || "N/A";
-
-        const row = `
-          <tr>
-            <td>${timestamp}</td>
-            <td>${txType}</td>
-            <td>${warehouseName}</td>
-            <td>${txHash}</td>
-          </tr>
-        `;
-        body.append(row);
+        // const timestamp = transaction.timestamp ?
+        //         new Date(transaction.timestamp).toLocaleString() : "未知时间";
+        // const txType = transaction.txType ?
+        //         transaction.txType.toUpperCase() : "未知类型";
+        // const warehouseName = transaction.warehouse && transaction.warehouse.name ?
+        //         transaction.warehouse.name : "未知仓库";
+        // const txHash = transaction.txhash || "N/A";
+        //
+        // const row = `
+        //   <tr>
+        //     <td>${timestamp}</td>
+        //     <td>${txType}</td>
+        //     <td>${warehouseName}</td>
+        //     <td>${txHash}</td>
+        //   </tr>
+        // `;
+        // body.append(row);
+        body.append(`
+      <tr>
+        <td>${transaction.timestamp}</td>
+        <td>${transaction.txType === 'STOCK_IN' ? '入库' : '出库'}</td>
+        <td>${transaction.warehouse.name}</td>
+        <td class="tx-hash">${transaction.txHash.substring(0, 8)}...</td>
+      </tr>
+    `);
       });
     }
   });
