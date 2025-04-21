@@ -73,7 +73,8 @@ public class BlockchainTransaction {
 
     // 交易类型枚举
     public enum TransactionType {
-        STOCK_CHANGE,   // 库存变更（对应stock_change有值）
+        STOCK_IN,   // 库存变更（对应stock_change有值）
+        STOCK_OUT,
         ALERT_EVENT     // 告警事件（对应sensorData的is_alert为true）
     }
 }

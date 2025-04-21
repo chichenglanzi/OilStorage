@@ -4,151 +4,227 @@
   <title>油库监控系统</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
-    /* 新增样式部分 */
-    .user-info {
-      position: absolute;
-      right: 20px;
-      top: 15px;
-      background: #f5f5f5;
-      padding: 8px 15px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .wh-details {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f8f9fa;
-      border-radius: 4px;
-    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header-section { margin-bottom: 30px; position: relative; }
+    .user-info { position: absolute; right: 0; top: 0; }
+    .operation-panel { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
     .warehouse-btn {
-      margin: 5px;
-      padding: 8px 15px;
-      border: 1px solid #4CAF50;
-      border-radius: 4px;
+      display: inline-block;
+      margin: 5px 8px;
+      padding: 10px 20px;
+      border: 2px solid #2196F3;
+      border-radius: 25px;
       cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
+      transition: all 0.3s ease;
     }
-    .warehouse-btn:hover:after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: #fff;
-      padding: 5px 10px;
-      border-radius: 4px;
-      white-space: nowrap;
+    .warehouse-btn.active {
+      background: #2196F3;
+      color: white;
+      border-color: #1976D2;
     }
+    .wh-basic-info {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f5f7fa;
+      border-radius: 10px;
+      font-size: 1.1em;
+    }
+    .sensor-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .sensor-table th, .sensor-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+    }
+    .sensor-table th { background: #f0f2f5; }
+    .status-alert { color: #ff4444; font-weight: bold; }
+    .success-message { color: #4CAF50; display: inline-block; margin-left: 15px; }
   </style>
 </head>
 <body>
 
-<div class="user-info">
-  登录用户：<span th:text="${username}"></span>
-  角色：<span th:text="${role}"></span>
-</div>
+<div class="container">
+  <!-- 用户信息与操作面板 -->
+  <div class="header-section">
+    <div class="user-info">
+      登录用户：<span th:text="${username}"></span> |
+      角色：<span th:text="${role}"></span>
+    </div>
+    <div class="operation-panel">
+      <input type="number" id="stockAmount" step="0.01"
+             placeholder="输入数量（吨）" required
+             style="padding: 8px; width: 180px; margin-right: 15px;">
+      <button class="btn" id="inStockBtn">入库</button>
+      <button class="btn" id="outStockBtn">出库</button>
+      <span id="operationResult" class="success-message" style="display: none;"></span>
+    </div>
+  </div>
 
-<h2>油库选择</h2>
-<div id="warehouseButtons">
-  <button th:each="wh,iter : ${warehouses}"
-          class="warehouse-btn"
-          th:data-id="${wh.id}"
-          th:data-location="${wh.location}"
-          th:data-capacity="${wh.capacity}"
-          th:data-stock="${wh.stock}"
-          th:data-manager="${wh.manager?.username}"
-          th:text="${wh.name}"
-          th:classappend="${iter.index == 0} ? 'active-btn'"
-          data-tooltip="点击查看详情">
-  </button>
-</div>
+  <!-- 油库选择按钮 -->
+  <div class="warehouse-btn-group">
+    <h2>选择油库</h2>
+    <div id="warehouseButtons">
+      <button th:each="wh, iter : ${warehouses}"
+              class="warehouse-btn"
+              th:data-id="${wh.id}"
+              th:data-location="${wh.location}"
+              th:data-capacity="${wh.capacity}"
+              th:data-stock="${wh.stock}"
+              th:data-manager="${wh.manager?.username}"
+              th:text="${wh.name}"
+              th:classappend="${iter.index == 0} ? 'active'"
+              data-tooltip="点击查看详细信息">
+      </button>
+    </div>
+  </div>
 
-<h3>传感器数据 -
-  <span id="currentWhName" th:text="${warehouses[0].name}"></span>
-</h3>
+  <!-- 油库详细信息区域 -->
+  <div id="warehouseInfo">
+    <h3 id="currentWhName">加载中...</h3>
+    <div class="wh-basic-info">
+      <div>位置：<span id="whLocation">-</span></div>
+      <div>最大容量：<span id="whCapacity">- 吨</span></div>
+      <div>当前库存：<span id="whStock">- 吨</span></div>
+      <div>负责人：<span id="whManager">-</span></div>
+    </div>
 
-<div id="sensorDataContainer">
-  <table th:if="${not #lists.isEmpty(warehouses[0].sensorData)}" class="sensor-table">
-    <thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead>
-    <tbody>
-    <tr th:each="data : ${warehouses[0].sensorData}">
-      <td th:text="${#temporals.format(data.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
-      <td th:text="${data.temperature?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>
-      <td th:text="${data.humidity?.setScale(1, T(java.math.RoundingMode).HALF_UP)}"></td>
-      <td th:text="${data.stock?.setScale(2, T(java.math.RoundingMode).HALF_UP)}"></td>
-      <td th:text="${data.isAlert ? '异常' : '正常'}"></td>
-    </tr>
-    </tbody>
-  </table>
+    <!-- 传感器数据区域 -->
+    <h4>最新传感器数据</h4>
+    <div id="sensorDataContainer">
+      <p class="text-muted">请选择油库查看数据...</p>
+    </div>
+  </div>
 </div>
 
 <script th:inline="javascript">
   $(function() {
-    // 初始化第一个油库的详细信息
-    const firstBtn = $(".warehouse-btn").first();
-    updateWarehouseDetails(firstBtn);
-    loadSensorData(firstBtn.data('id'));
+    // 初始化第一个油库
+    const firstBtn = $(".warehouse-btn:first");
+    handleWarehouseSelection(firstBtn);
 
-    // 按钮点击事件处理
+    // 油库按钮点击事件
     $(".warehouse-btn").click(function() {
-      const $btn = $(this);
-      $(".warehouse-btn").removeClass("active-btn");
-      $btn.addClass("active-btn");
-
-      updateWarehouseDetails($btn);
-      loadSensorData($btn.data('id'));
+      handleWarehouseSelection($(this));
     });
-  });
 
-  function updateWarehouseDetails(btnElement) {
-    const detailsHtml = `
-                <strong>${btnElement.text()}</strong>
-                <div class="wh-details">
-                    位置：${btnElement.data('location')}<br>
-                    容量：${Number(btnElement.data('capacity')).toFixed(2)}吨<br>
-                    存储量：${btnElement.data('stock')}<br>
-                    负责人：${btnElement.data('manager') || '未分配'}
-                </div>
-            `;
-    $("#currentWhName").html(detailsHtml);
-  }
-
-  function loadSensorData(warehouseId) {
-    $.ajax({
-      url: "/sensor-data/" + warehouseId,
-      success: function(data) {
-        console.log('收到的传感器数据:', data); // 添加日志
-        renderSensorData(data);
-      },
-      error: function(xhr) {
-        console.error("传感器数据加载失败:", xhr.statusText);
+    // 库存操作按钮事件
+    $("#inStockBtn, #outStockBtn").click(function() {
+      const amount = parseFloat($("#stockAmount").val());
+      if (isNaN(amount) || amount <= 0) {
+        showOperationFeedback("错误：请输入有效的正数数量", "error");
+        return;
       }
-    });
-  }
+      const warehouseId = $(".warehouse-btn.active").data('id');
+      const operationType = $(this).attr('id').split('StockBtn')[0].toLowerCase();
 
-  function renderSensorData(data) {
-    if (data.length === 0) {
-      $("#sensorDataContainer").html("<p>暂无传感器数据</p>");
-      return;
+      performStockOperation(warehouseId, operationType, amount);
+    });
+
+    function handleWarehouseSelection(btn) {
+      // 激活按钮
+      $(".warehouse-btn").removeClass("active");
+      btn.addClass("active");
+
+      // 更新基本信息
+      updateBasicInfo(btn);
+
+      // 加载传感器数据
+      loadSensorData(btn.data('id'));
     }
-    let html = '<table class="sensor-table"><thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead><tbody>';
 
-    data.forEach(d => {
-      console.log('当前处理的数据:', d); // 添加日志
-      html += `<tr>
-                    <td>${d.timestamp ?new Date(d.timestamp).toLocaleString() : 'N/A'}</td>
-                    <td>${(d.temperature || 0).toFixed(1)}</td>
-            <td>${(d.humidity || 0).toFixed(1)}</td>
-            <td>${(d.stock || 0).toFixed(2)}</td>
-                    <td>${d.isAlert ? '异常' : '正常'}</td>
-                </tr>`;
-    });
+    function updateBasicInfo(btn) {
+      $("#currentWhName").text(btn.text());
+      $("#whLocation").text(btn.data('location') || "未设置");
+      $("#whCapacity").text(`${Number(btn.data('capacity') || 0).toFixed(2)} 吨`);
+      $("#whStock").text(`${Number(btn.data('stock') || 0).toFixed(2)} 吨`);
+      $("#whManager").text(btn.data('manager') || "未分配");
+    }
 
-    html += '</tbody></table>';
-    $("#sensorDataContainer").html(html);
-  }
+    function loadSensorData(warehouseId) {
+      $.ajax({
+        url: "/sensor-data/" + warehouseId,
+        type: "GET",
+        success: function(data) {
+          renderSensorTable(data);
+        },
+        error: function(xhr) {
+          $("#sensorDataContainer").html(`<p class="status-alert">传感器数据加载失败：${xhr.statusText}</p>`);
+        }
+      });
+    }
+
+    function renderSensorTable(data) {
+      if (data.length === 0) {
+        $("#sensorDataContainer").html(`
+                    <table class="sensor-table">
+                        <thead><tr><th>时间</th><th>温度(℃)</th><th>湿度(%)</th><th>库存(吨)</th><th>状态</th></tr></thead>
+                        <tbody><tr><td colspan="5" class="text-muted">暂无有效传感器数据</td></tr></tbody>
+                    </table>
+                `);
+        return;
+      }
+
+      let tableHtml = `
+                <table class="sensor-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>温度</th>
+                            <th>湿度</th>
+                            <th>实时库存</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+      data.forEach(item => {
+        const statusClass = item.isAlert ? "status-alert" : "";
+        const timestamp = item.timestamp ?
+                new Date(item.timestamp).toLocaleString() : "未知时间";
+
+        tableHtml += `
+                    <tr>
+                        <td>${timestamp}</td>
+                        <td>${(item.temperature || 0).toFixed(1)} ℃</td>
+                        <td>${(item.humidity || 0).toFixed(1)} %</td>
+                        <td>${(item.stock || 0).toFixed(2)} 吨</td>
+                        <td class="${statusClass}">${item.isAlert ? "异常警报" : "运行正常"}</td>
+                    </tr>
+                `;
+      });
+
+      tableHtml += "</tbody></table>";
+      $("#sensorDataContainer").html(tableHtml);
+    }
+
+    function performStockOperation(warehouseId, type, amount) {
+      $.ajax({
+        url: "/inventory/warehouse/" + warehouseId + "/" + type,
+        type: "POST",
+        data: { amount: amount.toFixed(2) }, // 保留两位小数
+        success: function() {
+          showOperationFeedback("操作成功！库存已更新", "success");
+          // 刷新当前油库信息（重新获取最新数据）
+          const currentBtn = $(".warehouse-btn.active");
+          updateBasicInfo(currentBtn); // 直接更新基本信息（需后端返回最新库存）
+          loadSensorData(warehouseId); // 刷新传感器数据
+        },
+        error: function(xhr) {
+          showOperationFeedback(`操作失败：${xhr.responseText}`, "error");
+        }
+      });
+    }
+
+    function showOperationFeedback(message, type) {
+      const statusClass = type === "success" ? "success-message" : "status-alert";
+      $("#operationResult")
+              .removeClass().addClass(statusClass)
+              .text(message)
+              .show()
+              .delay(3000)
+              .fadeOut();
+    }
+  });
 </script>
 </body>
 </html>
