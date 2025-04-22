@@ -38,6 +38,53 @@
     .sensor-table th { background: #f0f2f5; }
     .status-alert { color: #ff4444; font-weight: bold; }
     .success-message { color: #4CAF50; display: inline-block; margin-left: 15px; }
+	
+	
+	/* 容器定位 */
+	.verification-container {
+	  position: relative;
+	  margin: 2rem auto;
+	  max-width: 300px;
+	}
+	
+	/* 按钮基础样式 */
+	.validate-btn {
+	  background: #4CAF50;
+	  color: white;
+	  padding: 12px 24px;
+	  border: none;
+	  border-radius: 8px;
+	  cursor: pointer;
+	  font-size: 16px;
+	  transition: all 0.3s ease;
+	  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	}
+	
+	/* 悬停动效 */
+	.validate-btn:hover {
+	  background: #45a049;
+	  transform: translateY(-2px);
+	  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+	}
+	
+	/* 验证结果提示 */
+	.result-toast {
+	  position: absolute;
+	  top: 120%;
+	  left: 50%;
+	  transform: translateX(-50%);
+	  background: rgba(0,150,136,0.9);
+	  color: white;
+	  padding: 12px 20px;
+	  border-radius: 6px;
+	  opacity: 0;
+	  visibility: hidden;
+	  transition: opacity 0.3s, visibility 0.3s;
+	  white-space: nowrap;
+	}
+
+	
+	
   </style>
 </head>
 <body>
@@ -47,6 +94,7 @@
   <div class="user-info">
     登录用户：<span th:text="${username}"></span> |
     角色：<span th:text="${role}"></span>
+	<a href="login.html">退出</a>
   </div>
 </div>
 <!-- 油库选择按钮 -->
@@ -76,7 +124,8 @@
     <div>当前库存：<span id="whStock">- 吨</span></div>
     <div>负责人：<span id="whManager">-</span></div>
   </div>
-  <div class="container">
+<!--  <div class="container" th:if="${${role}eq"auditor"}">-->
+  <div class="container" th:unless="${role eq 'auditor'}">
     <div class="operation-panel">
       <input type="number" id="stockAmount" step="0.01"
              placeholder="输入数量（吨）" required
@@ -93,8 +142,8 @@
       <tr>
         <th>时间</th>
         <th>交易类型</th>
-        <th>仓库</th>
         <th>回执</th>
+		<th>验证</th>
       </tr>
       </thead>
       <tbody id="blockchainTransactionsBody"></tbody>
@@ -145,6 +194,7 @@
 
       // 加载传感器数据
       loadSensorData(btn.data('id'));
+      loadBlockchainTransactions();
 
     }
 
@@ -297,13 +347,33 @@
       <tr>
         <td>${transaction.timestamp}</td>
         <td>${transaction.txType === 'STOCK_IN' ? '入库' : '出库'}</td>
-        <td>${transaction.warehouse.name}</td>
-        <td class="tx-hash">${transaction.txHash.substring(0, 8)}...</td>
+        <td class="tx-hash">${transaction.txHash.substring(0, 20)}...</td>
+		<td><div class="verification-container">
+  <button class="validate-btn" id="submitBtn">提交验证</button>
+  <div class="result-toast" id="resultToast">验证成功！</div>
+</div>
+</td>
       </tr>
-    `);
+	  document.getElementById('submitBtn').addEventListener('click', function() {
+	    const toast = document.getElementById('resultToast');
+	    
+	    // 显示提示
+	    toast.style.opacity = '1';
+	    toast.style.visibility = 'visible';
+	  
+	//     // 3秒后自动隐藏
+	//     setTimeout(() => {
+	//       toast.style.opacity = '0';
+	//       toast.style.visibility = 'hidden';
+	//     }, 3000);
+	//   });
+	//
+    // `);
       });
     }
   });
+  
 </script>
+
 </body>
 </html>
