@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>手动触发告警</title>
+</head>
+<body>
+<h1>手动录入高温传感器数据</h1>
+
+<form th:action="@{/manual-alert}" method="post">
+    <div>
+        <label>选择油库：</label>
+        <select name="warehouseId" required>
+            <option th:each="warehouse : ${warehouses}" th:value="${warehouse.id}" th:text="${warehouse.name}"></option>
+        </select>
+    </div>
+    <button type="submit">录入高温数据（50℃）</button>
+</form>
+</body>
+</html>

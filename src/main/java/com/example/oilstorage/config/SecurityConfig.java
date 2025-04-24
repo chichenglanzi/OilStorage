@@ -57,7 +57,7 @@ public PasswordEncoder passwordEncoder() {
         http
                 .csrf(CsrfConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**", "/error", "/").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**", "/error", "/","/manual-alert", "/manual-alert/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
